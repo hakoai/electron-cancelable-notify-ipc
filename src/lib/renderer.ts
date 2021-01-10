@@ -21,12 +21,24 @@ export function makeIpcRendererFunctions(ipcRenderer: IpcRenderer) {
         ipcRenderer.on(channels.notify, (_, ...args) => {
           onNotify(...args);
         });
+
         ipcRenderer.once(channels.responce, (_, ...args) => {
           if (!done) {
             done = true;
             ipcRenderer.removeAllListeners(channels.act);
             ipcRenderer.removeAllListeners(channels.notify);
+            ipcRenderer.removeAllListeners(channels.error);
             resolve(args);
+          }
+        });
+
+        ipcRenderer.once(channels.error, (_, e) => {
+          if (!done) {
+            done = true;
+            ipcRenderer.removeAllListeners(channels.act);
+            ipcRenderer.removeAllListeners(channels.notify);
+            ipcRenderer.removeAllListeners(channels.responce);
+            reject(e);
           }
         });
 
@@ -36,7 +48,8 @@ export function makeIpcRendererFunctions(ipcRenderer: IpcRenderer) {
             ipcRenderer.removeAllListeners(channels.act);
             ipcRenderer.removeAllListeners(channels.notify);
             ipcRenderer.removeAllListeners(channels.responce);
-            reject(new Error('ipc timeout.'));
+            ipcRenderer.removeAllListeners(channels.error);
+            reject(new Error('ipc act timeout.'));
           }
         }, timeout);
 

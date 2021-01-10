@@ -4,6 +4,7 @@ export interface Channels {
   notify: string;
   cancel: string;
   responce: string;
+  error: string;
 }
 
 export function makeChannel(channel: string): Channels {
@@ -13,5 +14,6 @@ export function makeChannel(channel: string): Channels {
     notify: `${base}-notify`,
     cancel: `${base}-cancel`,
     responce: `${base}-responce`,
+    error: `${base}-error`,
   };
 }

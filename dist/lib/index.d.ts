@@ -3,5 +3,6 @@ export interface Channels {
     notify: string;
     cancel: string;
     responce: string;
+    error: string;
 }
 export declare function makeChannel(channel: string): Channels;

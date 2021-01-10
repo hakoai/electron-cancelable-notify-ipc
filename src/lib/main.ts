@@ -10,8 +10,9 @@ export function makeIpcMainFunctions(ipcMain: IpcMain) {
       notify: (...args: unknown[]) => void,
       cancel: Promise<unknown>,
       ...args: unknown[]
-    ) => Promise<unknown[]>
-  ): void {
+    ) => Promise<unknown[]>,
+    onError: (e: unknown) => void
+  ) {
     ipcMain.removeAllListeners(channel);
     ipcMain.on(channel, (event, channels: Channels, ...args) => {
       event.sender.send(channels.act);
@@ -20,20 +21,30 @@ export function makeIpcMainFunctions(ipcMain: IpcMain) {
           resolve(args);
         });
       });
-      listener(
-        event,
-        (...args) => {
-          event.sender.send(channels.notify, ...args);
-        },
-        calcelPromise,
-        ...args
-      )
-        .then(res => {
-          event.sender.send(channels.responce, ...res);
-        })
-        .finally(() => {
-          ipcMain.removeAllListeners(channels.cancel);
-        });
+      try {
+        listener(
+          event,
+          (...args) => {
+            event.sender.send(channels.notify, ...args);
+          },
+          calcelPromise,
+          ...args
+        )
+          .then(res => {
+            event.sender.send(channels.responce, ...res);
+          })
+          .catch(e => {
+            event.sender.send(channels.error, e);
+            onError(e);
+          })
+          .finally(() => {
+            ipcMain.removeAllListeners(channels.cancel);
+          });
+      } catch (e) {
+        ipcMain.removeAllListeners(channels.cancel);
+        event.sender.send(channels.error, e);
+        onError(e);
+      }
     });
   }
 
