@@ -9,19 +9,18 @@ function makeIpcMainFunctions(ipcMain) {
   function handle(channel, listener, onError) {
     ipcMain.removeAllListeners(channel);
     ipcMain.on(channel, function (event, channels) {
+      for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+        args[_key - 2] = arguments[_key];
+      }
+
       event.sender.send(channels.act);
       var calcelPromise = new Promise(function (resolve) {
         ipcMain.once(channels.cancel, function (_, args) {
           resolve(args);
         });
       });
-
-      try {
-        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-          args[_key - 2] = arguments[_key];
-        }
-
-        listener.apply(void 0, [event, function () {
+      Promise.resolve().then(function () {
+        return listener.apply(void 0, [event, function () {
           var _event$sender;
 
           for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
@@ -29,21 +28,15 @@ function makeIpcMainFunctions(ipcMain) {
           }
 
           (_event$sender = event.sender).send.apply(_event$sender, [channels.notify].concat(args));
-        }, calcelPromise].concat(args)).then(function (res) {
-          var _event$sender2;
-
-          (_event$sender2 = event.sender).send.apply(_event$sender2, [channels.responce].concat(res));
-        })["catch"](function (e) {
-          event.sender.send(channels.error, e);
-          onError(e);
-        })["finally"](function () {
-          ipcMain.removeAllListeners(channels.cancel);
-        });
-      } catch (e) {
-        ipcMain.removeAllListeners(channels.cancel);
+        }, calcelPromise].concat(args));
+      }).then(function (res) {
+        event.sender.send(channels.responce, res);
+      })["catch"](function (e) {
         event.sender.send(channels.error, e);
         onError(e);
-      }
+      })["finally"](function () {
+        ipcMain.removeAllListeners(channels.cancel);
+      });
     });
   }
 
@@ -94,17 +87,12 @@ function makeIpcRendererFunctions(ipcRenderer) {
 
         onNotify.apply(void 0, args);
       });
-      ipcRenderer.once(channels.responce, function (_) {
+      ipcRenderer.once(channels.responce, function (_, args) {
         if (!done) {
           done = true;
           ipcRenderer.removeAllListeners(channels.act);
           ipcRenderer.removeAllListeners(channels.notify);
           ipcRenderer.removeAllListeners(channels.error);
-
-          for (var _len4 = arguments.length, args = new Array(_len4 > 1 ? _len4 - 1 : 0), _key4 = 1; _key4 < _len4; _key4++) {
-            args[_key4 - 1] = arguments[_key4];
-          }
-
           resolve(args);
         }
       });
@@ -132,8 +120,8 @@ function makeIpcRendererFunctions(ipcRenderer) {
   }
 
   function invoke(channel, onNotify) {
-    for (var _len5 = arguments.length, args = new Array(_len5 > 2 ? _len5 - 2 : 0), _key5 = 2; _key5 < _len5; _key5++) {
-      args[_key5 - 2] = arguments[_key5];
+    for (var _len4 = arguments.length, args = new Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
+      args[_key4 - 2] = arguments[_key4];
     }
 
     return invokeWithTimeOut.apply(void 0, [channel, onNotify, 1000].concat(args));

@@ -11,8 +11,8 @@ describe('ipcMain.on', () => {
   const invokeParam = 'invoke';
   const notifyParam = 'notify';
   const cancelParam = 'cancel';
-  const responseParam = ['response'];
-  const responseParam2 = ['response2'];
+  const responseParam = 'response';
+  const responseParam2 = 'response2';
   const ignore = (_: unknown) => {};
   it('works', async () => {
     const channel = 'works';
@@ -21,7 +21,7 @@ describe('ipcMain.on', () => {
       notifyFunc(notifyParam);
       if (first) {
         first = false;
-        return new Promise<string[]>(resolve => {
+        return new Promise<string>(resolve => {
           setTimeout(() => {
             notifyFunc(notifyParam);
             resolve(responseParam);

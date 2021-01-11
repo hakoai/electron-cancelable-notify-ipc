@@ -10,7 +10,7 @@ export function makeIpcMainFunctions(ipcMain: IpcMain) {
       notify: (...args: unknown[]) => void,
       cancel: Promise<unknown>,
       ...args: unknown[]
-    ) => Promise<unknown[]>,
+    ) => Promise<unknown> | unknown,
     onError: (e: unknown) => void
   ) {
     ipcMain.removeAllListeners(channel);
@@ -21,30 +21,27 @@ export function makeIpcMainFunctions(ipcMain: IpcMain) {
           resolve(args);
         });
       });
-      try {
-        listener(
-          event,
-          (...args) => {
-            event.sender.send(channels.notify, ...args);
-          },
-          calcelPromise,
-          ...args
+      Promise.resolve()
+        .then(() =>
+          listener(
+            event,
+            (...args) => {
+              event.sender.send(channels.notify, ...args);
+            },
+            calcelPromise,
+            ...args
+          )
         )
-          .then(res => {
-            event.sender.send(channels.responce, ...res);
-          })
-          .catch(e => {
-            event.sender.send(channels.error, e);
-            onError(e);
-          })
-          .finally(() => {
-            ipcMain.removeAllListeners(channels.cancel);
-          });
-      } catch (e) {
-        ipcMain.removeAllListeners(channels.cancel);
-        event.sender.send(channels.error, e);
-        onError(e);
-      }
+        .then(res => {
+          event.sender.send(channels.responce, res);
+        })
+        .catch(e => {
+          event.sender.send(channels.error, e);
+          onError(e);
+        })
+        .finally(() => {
+          ipcMain.removeAllListeners(channels.cancel);
+        });
     });
   }
 

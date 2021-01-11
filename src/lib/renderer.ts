@@ -22,7 +22,7 @@ export function makeIpcRendererFunctions(ipcRenderer: IpcRenderer) {
           onNotify(...args);
         });
 
-        ipcRenderer.once(channels.responce, (_, ...args) => {
+        ipcRenderer.once(channels.responce, (_, args) => {
           if (!done) {
             done = true;
             ipcRenderer.removeAllListeners(channels.act);
